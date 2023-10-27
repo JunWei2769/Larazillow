@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Listing;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ListingController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Listing::class, 'listing');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -25,6 +31,7 @@ class ListingController extends Controller
      */
     public function create()
     {
+        // $this->authorize('create', Listing::class);
         return inertia('Listing/Create');
     }
 
@@ -33,7 +40,7 @@ class ListingController extends Controller
      */
     public function store(Request $request)
     {
-        Listing::create(
+        $request->user()->listings()->create(
             $request->validate([
                 'beds' => 'required|integer|min:0|max:20',
                 'baths' => 'required|integer|min:0|max:20',
@@ -56,6 +63,15 @@ class ListingController extends Controller
      */
     public function show(Listing $listing)
     {
+        // option 1
+        // if (Auth::user()->cannot('view', $listing)) {
+        //     abort(403);     // HTTP code for action forbidden, this action will stop the controller
+        // }
+
+        // option 2
+        // $this->authorize('view', $listing);     // check if the current user is authorized to perform this view operation on this model
+                                                // if not, 403 code will automatically being returned
+
         return inertia(
             'Listing/Show',
             [
