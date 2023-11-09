@@ -1,8 +1,13 @@
 <template>
     <div class="flex flex-col-reverse md:grid grid-cols-12 gap-4">
-        <Box class="md:col-span-7 flex items-center w-full">
-            <div class="w-full text-center font-medium text-gray-500">No images</div>
+        <Box v-if="listing.images.length" class="md:col-span-7 flex items-center">
+            <div class="grid grid-cols-2 gap-1">
+                <img v-for="image in listing.images" :key="image.id" :src="image.src" />
+            </div>
         </Box>
+
+        <EmptyState v-else class="md:col-span-7 flex items-center">No images</EmptyState>
+        
         <div class="md:col-span-5 flex flex-col gap-4">
             <Box>
                 <template #header>
@@ -57,6 +62,10 @@
                     </div>
                 </div>
             </Box>
+
+            <MakeOffer v-if="user && !offerMade" @offer-updated="offer = $event" :listing-id="listing.id" :price="listing.price" />       <!-- offer section does not show if there is unauthenticated user -->
+
+            <OfferMade v-if="user && offerMade" :offer="offerMade" />
         </div>
     </div>
 </template>
@@ -66,15 +75,30 @@ import ListingAddress from '@/Components/ListingAddress.vue'
 import ListingSpace from '@/Components/UI/ListingSpace.vue'
 import Price from '@/Components/UI/Price.vue'
 import Box from '@/Components/UI/Box.vue'
-import {ref} from 'vue'
+import {computed, ref} from 'vue'
 import {useMonthlyPayment} from '@/Composables/useMonthlyPayment'
+import MakeOffer from '@/Pages/Listing/Show/Components/MakeOffer.vue'
+import { usePage } from '@inertiajs/vue3'
+import OfferMade from './Show/Components/OfferMade.vue'
+import EmptyState from '@/Components/UI/EmptyState.vue'
 
 const interestRate = ref(2.5)
 const duration = ref(25)
 
 const props = defineProps({
-    listing: Object
+    listing: Object,
+    offerMade: Object
 })
 
-const { monthlyPayment, totalPaid, totalInterest } = useMonthlyPayment(props.listing.price, interestRate, duration)
+const offer = ref(props.listing.price)
+
+const { monthlyPayment, totalPaid, totalInterest } = useMonthlyPayment(
+    offer, interestRate, duration
+)
+
+const page = usePage()
+
+const user = computed(      // to identify whether the user is authenticated
+    () => page.props.user,
+)
 </script>
